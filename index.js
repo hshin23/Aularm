@@ -1,4 +1,13 @@
-import { AppRegistry } from 'react-native';
-import App from './App';
+import React, {Component} from 'react';
+import {AppRegistry} from 'react-native';
+import App from './app/App';
 
-AppRegistry.registerComponent('aularm', () => App);
+class clock extends Component {
+    render() {
+        return (
+            <App />
+        );
+    }
+}
+
+AppRegistry.registerComponent('aularm', () => clock);
