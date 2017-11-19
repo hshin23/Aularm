@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "971693169862",
+    "firebase_url": "https://aularm-ced41.firebaseio.com",
+    "project_id": "aularm-ced41",
+    "storage_bucket": "aularm-ced41.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:971693169862:android:08abb70c9711e834",
+        "android_client_info": {
+          "package_name": "com.a4dn.aularm.aularm"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "971693169862-246aesbofg2g6ror6cuj4tmio39bpipb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.a4dn.aularm.aularm",
+            "certificate_hash": "22601dfec456c0485ce01771e9c785b27045587f"
+          }
+        },
+        {
+          "client_id": "971693169862-p33bb084s1j8qn79bdamhmtshie5stpk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAD14XL6xWLyqOSa9CcBU2FCqJbIRzQOmE"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "971693169862-p33bb084s1j8qn79bdamhmtshie5stpk.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
