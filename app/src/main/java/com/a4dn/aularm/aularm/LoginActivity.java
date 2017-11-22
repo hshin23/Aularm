@@ -12,14 +12,14 @@ import java.util.List;
 public class LoginActivity extends AppCompatActivity {
     private static final int RC_SIGN_IN = 123;
     private static final FirebaseHelper firebase = new FirebaseHelper();
+    private static List<AuthUI.IdpConfig> providers = Arrays.asList(
+                new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build(),
+                new AuthUI.IdpConfig.Builder(AuthUI.FACEBOOK_PROVIDER).build());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (!firebase.isSignedIn()) {
-            List<AuthUI.IdpConfig> providers = Arrays.asList(
-                    new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build(),
-                    new AuthUI.IdpConfig.Builder(AuthUI.FACEBOOK_PROVIDER).build());
+        if (!firebase.isSignedIn() || firebase.isSignedIn()) {
             startActivityForResult(AuthUI.getInstance().createSignInIntentBuilder().setAvailableProviders(providers).setLogo(R.drawable.logo).setTheme(R.style.GreenTheme).build(), RC_SIGN_IN);
             setContentView(R.layout.activity_main);
         }

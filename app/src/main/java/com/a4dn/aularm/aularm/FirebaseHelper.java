@@ -2,7 +2,6 @@ package com.a4dn.aularm.aularm;
 
 import android.content.Context;
 import android.content.Intent;
-import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
@@ -15,11 +14,7 @@ import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
-import java.util.Arrays;
-import java.util.List;
-
 import static android.content.ContentValues.TAG;
-import static android.support.v4.app.ActivityCompat.startActivityForResult;
 
 class FirebaseHelper {
     private FirebaseAuth mAuth;
@@ -74,7 +69,6 @@ class FirebaseHelper {
                   }
               });
     }
-
 
     boolean isSignedIn() {
         if (this.mAuth.getCurrentUser() != null) {
