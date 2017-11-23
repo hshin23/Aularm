@@ -11,4 +11,6 @@
     <color name="material_lime_a700">#AEEA00</color>
     <color name="material_purple_a700">#AA00FF</color>
 
+    <color name="logo_background">#FC7401</color>
+
 </resources>

@@ -6,9 +6,6 @@ import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
 
-import com.firebase.ui.auth.AuthUI;
-import com.firebase.ui.auth.IdpResponse;
-import com.firebase.ui.auth.ResultCodes;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
@@ -25,9 +22,10 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import static android.content.ContentValues.TAG;
 
 class FirebaseHelper {
-    private FirebaseAuth mAuth;
-    private FirebaseAuth.AuthStateListener mAuthListener;
-    private FirebaseDatabase mDatabase;
+
+    FirebaseAuth mAuth;
+    FirebaseAuth.AuthStateListener mAuthListener;
+    FirebaseDatabase mDatabase;
 
     private boolean signedIn;
     private FirebaseUser currentUser;
@@ -64,6 +62,7 @@ class FirebaseHelper {
         }
     }
 
+    /*
     void signIn(int requestCode, int resultCode, Intent data, int RC_SIGN_IN) {
         if (signedIn) {
             Log.d(TAG, "onAuthStateStatic:signed_in:" + this.currentUser.getUid());
@@ -90,6 +89,7 @@ class FirebaseHelper {
                     });
         }
     }
+    */
 
     boolean isSignedIn() {
         return signedIn;
@@ -126,6 +126,7 @@ class FirebaseHelper {
     /*
      * Methods that are prefixed with __ are unused example methods for reference.
      */
+    /*
     void __signIn(int requestCode, int resultCode, Intent data, int RC_SIGN_IN) {
         if (this.mAuth.getCurrentUser() != null) {
             Log.d(TAG, "onAuthStateStatic:signed_in:" + mAuth.getCurrentUser().getUid());
@@ -139,22 +140,5 @@ class FirebaseHelper {
             }
         }
     }
-
-    private class GoogleSignInHelper {
-
-        GoogleSignInOptions gso;
-        GoogleSignInClient gsc;
-
-
-        GoogleSignInHelper(Context context) {
-            this.gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN).requestEmail().build();
-            this.gsc = GoogleSignIn.getClient(context, gso);
-        }
-
-        private void signIn(Context context) {
-
-            Intent signInIntent = gsc.getSignInIntent();
-        }
-
-    }
+    */
 }
