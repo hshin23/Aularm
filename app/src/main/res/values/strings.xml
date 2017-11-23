@@ -16,7 +16,8 @@
     <!-- Facebook application ID and custom URL scheme (app ID prefixed by 'fb'). -->
     <string name="facebook_application_id" translatable="false">190417418185857</string>
     <string name="facebook_login_protocol_scheme" translatable="false">190417418185857</string>
-    <string name="title_activity_amna">AmnaActivity</string>
+    <string name="title_activity_main">MainActivity</string>
     <string name="action_settings">Settings</string>
     <string name="section_format">Hello World from section: %1$d</string>
+
 </resources>

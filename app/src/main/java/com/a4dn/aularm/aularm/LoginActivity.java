@@ -12,6 +12,7 @@ import java.util.List;
 public class LoginActivity extends AppCompatActivity {
     private static final int RC_SIGN_IN = 123;
     private static final FirebaseHelper firebase = new FirebaseHelper();
+
     private static List<AuthUI.IdpConfig> providers = Arrays.asList(
                 new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build(),
                 new AuthUI.IdpConfig.Builder(AuthUI.FACEBOOK_PROVIDER).build());
@@ -19,9 +20,11 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (!firebase.isSignedIn() || firebase.isSignedIn()) {
-            startActivityForResult(AuthUI.getInstance().createSignInIntentBuilder().setAvailableProviders(providers).setLogo(R.drawable.logo).setTheme(R.style.GreenTheme).build(), RC_SIGN_IN);
-            setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main);
+        if (savedInstanceState == null){
+            if (!firebase.isSignedIn()) {
+                startActivityForResult(AuthUI.getInstance().createSignInIntentBuilder().setAvailableProviders(providers).setLogo(R.drawable.logo).setTheme(R.style.GreenTheme).build(), RC_SIGN_IN);
+            }
         }
     }
 
@@ -34,11 +37,14 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     public void onStop() {
         super.onStop();
+        firebase.signOut(this);
         firebase.removeListener();
     }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        System.out.println("request code: " + requestCode);
+        System.out.println("result  code: " + resultCode);
         super.onActivityResult(requestCode, resultCode, data);
         firebase.signIn(requestCode, resultCode, data, RC_SIGN_IN);
     }

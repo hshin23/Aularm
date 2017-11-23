@@ -26,8 +26,9 @@
         <activity android:name="._MainActivity" />
         <activity
             android:name=".MainActivity"
-            android:label="@string/title_activity_amna"
-            android:theme="@style/Theme.AppCompat.NoActionBar"></activity>
+            android:label="@string/title_activity_main"
+            android:theme="@style/Theme.AppCompat.NoActionBar" />
+        <activity android:name=".AuthenticationActivity"></activity>
     </application>
 
 </manifest>
