@@ -6,7 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    tools:context="com.a4dn.aularm.aularm.MainActivity">
+    tools:context="com.a4dn.aularm.aularm.NavigationActivity">
 
     <android.support.design.widget.AppBarLayout
         android:id="@+id/appbar"
@@ -19,9 +19,11 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
+            android:layout_weight="1"
             android:background="?attr/colorPrimary"
             app:layout_scrollFlags="scroll|enterAlways"
-            app:popupTheme="@style/PopupOverlay">
+            app:popupTheme="@style/PopupOverlay"
+            app:title="@string/app_name">
 
         </android.support.v7.widget.Toolbar>
 
