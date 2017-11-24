@@ -14,20 +14,16 @@ public class LoginActivity extends AppCompatActivity {
     private FirebaseHelper firebase = new FirebaseHelper();
 
     private static List<AuthUI.IdpConfig> providers = Arrays.asList(
-                new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build(),
-                new AuthUI.IdpConfig.Builder(AuthUI.FACEBOOK_PROVIDER).build());
+            new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build());
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (savedInstanceState == null) {
-            if (!firebase.isSignedIn()) {
-                startActivityForResult(AuthUI.getInstance().createSignInIntentBuilder().setAvailableProviders(providers).setLogo(R.drawable.logo).setTheme(R.style.GreenTheme).build(), RC_SIGN_IN);
-            } else {
-                // TODO: Refactor below two lines
-                Intent intent = new Intent(this, NavigationActivity.class);
-                startActivity(intent);
-            }
+        setContentView(R.layout.activity_default);
+        if (!firebase.isSignedIn()) {
+            startActivityForResult(AuthUI.getInstance().createSignInIntentBuilder().setAvailableProviders(providers).setLogo(R.drawable.logo).setTheme(R.style.GreenTheme).build(), RC_SIGN_IN);
+        } else {
+            showMainMenu();
         }
     }
 
@@ -49,10 +45,15 @@ public class LoginActivity extends AppCompatActivity {
         firebase.signIn(requestCode, resultCode, data, RC_SIGN_IN);
 
         if (resultCode == RESULT_OK) {
-            System.out.println("RESULT_OK");
-            // TODO: Refactor below two lines
-            Intent intent = new Intent(this, NavigationActivity.class);
-            startActivity(intent);
+            showMainMenu();
+        } else {
+            finish();
         }
+    }
+
+    protected void showMainMenu() {
+        Intent intent = new Intent(this, NavigationActivity.class);
+        startActivity(intent);
+        finish();
     }
 }

@@ -6,6 +6,7 @@
     <string name="prompt_password">Password (optional)</string>
     <string name="action_sign_in">Sign in or register</string>
     <string name="action_sign_in_short">Sign in</string>
+    <string name="action_sign_out">Sign out</string>
     <string name="error_invalid_email">This email address is invalid</string>
     <string name="error_invalid_password">This password is too short</string>
     <string name="error_incorrect_password">This password is incorrect</string>
@@ -28,5 +29,9 @@
     <string name="demo_external_activity">Demo External Activity</string>
     <string name="demo_collection">Demo Collection</string>
     <string name="title_activity_navigation">NavigationActivity</string>
+    <string name="desc"></string>
+    <string name="dialog_prompt_exit">Quit aularm?</string>
+    <string name="exit">exit</string>
+    <string name="cancel">cancel</string>
 
 </resources>
