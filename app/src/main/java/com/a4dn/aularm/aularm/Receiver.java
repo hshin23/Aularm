@@ -18,7 +18,7 @@ public class Receiver extends BroadcastReceiver {
 
         PowerManager.WakeLock wl = pm.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "tag");
 
-        //Acquire the lock
+        // Lock acquisition
         wl.acquire();
 
         Log.v("ADebugTag", "It work!");
@@ -27,7 +27,7 @@ public class Receiver extends BroadcastReceiver {
         Intent play_alarm_intent = new Intent(context, PlayService.class);
         context.startService(play_alarm_intent);
 
-        //Release the lock
+        // Lock release
         wl.release();
 
     }

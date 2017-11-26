@@ -82,6 +82,7 @@ public class NavigationActivity extends AppCompatActivity {
         switch (id) {
             case R.id.action_signout:
                 firebase.signOut(this);
+                startActivity(new Intent(this, LoginActivity.class));
                 finish();
         }
 
@@ -132,9 +133,9 @@ public class NavigationActivity extends AppCompatActivity {
             PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity().getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
             // send alarm to manager
-            alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+            alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), alarmManager.INTERVAL_DAY , pendingIntent);
 
-            Log.e("Time Changed", String.valueOf(hourOfDay) + ":" + String.valueOf(minute));
+            Log.i("Time Changed", String.valueOf(hourOfDay) + ":" + String.valueOf(minute));
 
         }
     }
@@ -178,7 +179,7 @@ public class NavigationActivity extends AppCompatActivity {
                 case 1:
                     return ClockFragment.newInstance();
                 case 2:
-                    return QuestionnaireFragment.newInstance();
+                    // return QuestionnaireFragment.newInstance();
                 default:
                     return ClockFragment.newInstance();
             }

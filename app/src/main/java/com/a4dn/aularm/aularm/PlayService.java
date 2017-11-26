@@ -20,7 +20,7 @@ public class PlayService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        Log.e("In the service,", "start command");
+        Log.i("In the service,", "start command");
 
         player = MediaPlayer.create(this, R.raw.analog);
         player.start();
