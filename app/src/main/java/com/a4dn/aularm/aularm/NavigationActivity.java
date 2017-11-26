@@ -22,6 +22,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
@@ -159,6 +161,72 @@ public class NavigationActivity extends AppCompatActivity {
     }
 
 
+    public static class QuestionnaireFragment extends Fragment {
+
+        public static QuestionnaireFragment newInstance() {
+            QuestionnaireFragment fragment = new QuestionnaireFragment();
+            return fragment;
+        }
+
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup container,
+                                 Bundle savedInstanceState) {
+            final View rootView = inflater.inflate(R.layout.fragment_quest, container, false);
+
+            Button butt = (Button) rootView.findViewById(R.id.gen_alarm_butt);
+
+            final EditText anOne = rootView.findViewById(R.id.answer_1);
+            final EditText anTwo = rootView.findViewById(R.id.answer_2);
+            final EditText anThree = rootView.findViewById(R.id.answer_3);
+
+            butt.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View goTo) {
+                    String checkOne = anOne.getText().toString();
+                    String checkTwo = anTwo.getText().toString();
+                    String checkThree = anThree.getText().toString();
+                    String hours = "";
+                    String sleep_timeVal = "";
+                    String wake_timeVal = "";
+                    FirebaseHelper firebase = new FirebaseHelper();
+
+                    if (!checkOne.equals("")) {
+                        if ((Integer.parseInt(checkOne) < 24) && (Integer.parseInt(checkOne) >= 0)) {
+                            hours = checkOne;
+                        } else {
+                            hours = "8";
+                        }
+                    }
+                    if (!checkTwo.equals("")) {
+                        if ((Integer.parseInt(checkTwo) < 24) && (Integer.parseInt(checkTwo) >= 0)) {
+                            sleep_timeVal = checkTwo;
+                        } else {
+                            sleep_timeVal = "17";
+                        }
+                    }
+                    if (!checkThree.equals("")) {
+                        if ((Integer.parseInt(checkThree) < 24) && (Integer.parseInt(checkThree) >= 0)) {
+                            wake_timeVal = checkThree;
+                        } else {
+                            wake_timeVal = "3";
+                        }
+                    }
+
+                    Log.d("hours", hours);
+                    Log.d("sleep_timeVal",sleep_timeVal);
+                    Log.d("wake_timeVal",wake_timeVal);
+                    String uid = firebase.getUser().getUid();
+                    firebase.write(uid, hours);
+                    firebase.write(uid, sleep_timeVal);
+                    firebase.write(uid, wake_timeVal);
+                    System.out.println("UID = " + uid);
+                }
+            });
+
+            return rootView;
+        }
+    }
+
     /**
      * A {@link FragmentPagerAdapter} that returns a fragment corresponding to
      * one of the sections/tabs/pages.
@@ -179,7 +247,7 @@ public class NavigationActivity extends AppCompatActivity {
                 case 1:
                     return ClockFragment.newInstance();
                 case 2:
-                    // return QuestionnaireFragment.newInstance();
+                    return QuestionnaireFragment.newInstance();
                 default:
                     return ClockFragment.newInstance();
             }
