@@ -1,5 +1,13 @@
 package com.a4dn.aularm.aularm;
 
+import android.app.AlarmManager;
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.Intent;
+import android.icu.util.Calendar;
+import android.icu.util.GregorianCalendar;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
@@ -8,18 +16,20 @@ import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-
-import android.widget.TextView;
+import android.widget.TimePicker;
+import android.widget.Toast;
 
 import com.firebase.ui.auth.AuthUI;
 
 import java.util.Arrays;
 import java.util.List;
+
 
 public class NavigationActivity extends AppCompatActivity {
 
@@ -36,7 +46,7 @@ public class NavigationActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_navigation);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
         // Create the adapter that will return a fragment for each of the three
@@ -81,37 +91,70 @@ public class NavigationActivity extends AppCompatActivity {
     /**
      * A placeholder fragment containing a simple view.
      */
-    public static class Clock extends Fragment {
+    public static class ClockFragment extends Fragment {
 
-        public static Clock newInstance() {
-            Clock fragment = new Clock();
+        public ClockFragment() {
+        }
+
+        public static ClockFragment newInstance() {
+            ClockFragment fragment = new ClockFragment();
+
             return fragment;
         }
 
         @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_clock, container, false);
+            final TimePicker clock = rootView.findViewById(R.id.timePicker);
+
+            clock.setOnTimeChangedListener(new TimePicker.OnTimeChangedListener(){
+
+                @Override
+                public void onTimeChanged(TimePicker view, int hourOfDay, int minute) {
+                    setAlarm(hourOfDay, minute);
+                }});
             return rootView;
+        }
+
+        private void setAlarm(int hourOfDay,  int minute) {
+
+            AlarmManager alarmManager = (AlarmManager) getActivity().getApplicationContext().getSystemService(ALARM_SERVICE);
+            Calendar calendar = Calendar.getInstance();
+
+            // Set alarm time
+            calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+            calendar.set(Calendar.MINUTE, minute);
+
+            // Intent to send to receiver
+            Intent intent = new Intent(getActivity().getApplicationContext(), Receiver.class);
+
+            // Delay intent until given time
+            PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity().getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+            // send alarm to manager
+            alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
+
+            Log.e("Time Changed", String.valueOf(hourOfDay) + ":" + String.valueOf(minute));
+
         }
     }
 
     /**
      * A placeholder fragment containing a simple view.
      */
-    public static class Calendar extends Fragment {
+    public static class CalendarFragment extends Fragment {
 
-        public static Calendar newInstance() {
-            Calendar fragment = new Calendar();
+        public static CalendarFragment newInstance() {
+            CalendarFragment fragment = new CalendarFragment();
             return fragment;
         }
 
         @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_clock, container, false);
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+            View rootView = inflater.inflate(R.layout.fragment_calendar, container, false);
             return rootView;
         }
+
     }
 
 
@@ -130,10 +173,14 @@ public class NavigationActivity extends AppCompatActivity {
             // getItem is called to instantiate the fragment for the given page.
             // Return a PlaceholderFragment (defined as a static inner class below).
             switch (position) {
+                case 0:
+                    return CalendarFragment.newInstance();
                 case 1:
-                    return Clock.newInstance();
+                    return ClockFragment.newInstance();
+                case 2:
+                    return QuestionnaireFragment.newInstance();
                 default:
-                    return PlaceholderFragment.newInstance(position + 1);
+                    return ClockFragment.newInstance();
             }
         }
 
