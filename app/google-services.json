@@ -15,6 +15,38 @@
       },
       "oauth_client": [
         {
+          "client_id": "971693169862-ec13o06gjc8s80a280p5oek1d6bb1ab9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.a4dn.aularm.aularm",
+            "certificate_hash": "e9aa231239e8a836510e30c02bd0c6fd071a157e"
+          }
+        },
+        {
+          "client_id": "971693169862-v22q24vef0qolok08gjg5a7j55a0i8ah.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.a4dn.aularm.aularm",
+            "certificate_hash": "911361016cb3b60c36d1514a26695c8f7b3a020a"
+          }
+        },
+        {
+          "client_id": "971693169862-pnba6mgtoju3neju8f4l61pspctlvgl3.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.a4dn.aularm.aularm",
+            "certificate_hash": "4d5ca733f447fc194c7994fb9d7799471af4e015"
+          }
+        },
+        {
+          "client_id": "971693169862-n58a0rnpthee41p9qdmolvqvt7ko0rpc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.a4dn.aularm.aularm",
+            "certificate_hash": "5e5b9734b2db867780e19851647c90da6f9f7c18"
+          }
+        },
+        {
           "client_id": "971693169862-246aesbofg2g6ror6cuj4tmio39bpipb.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

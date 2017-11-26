@@ -36,6 +36,7 @@ public class LoginActivity extends AppCompatActivity {
     @Override
     public void onStop() {
         super.onStop();
+        firebase.signOut(this);
         firebase.removeListener();
     }
 
@@ -45,6 +46,7 @@ public class LoginActivity extends AppCompatActivity {
         firebase.signIn(requestCode, resultCode, data, RC_SIGN_IN);
 
         if (resultCode == RESULT_OK) {
+            //System.out.println("SIGNED IN");
             showMainMenu();
         } else {
             finish();
