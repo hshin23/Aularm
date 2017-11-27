@@ -91,7 +91,7 @@ class FirebaseHelper {
         return mAuth.getCurrentUser();
     }
 
-    void write(String uid, String inner, String msg) {
+    void write(String uid, String msg) {
         this.mDatabase.getReference(uid).setValue(msg);
     }
     //mDatabase.child("users").child(userId).child("username").setValue(name);
