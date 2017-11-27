@@ -2,6 +2,8 @@ package com.a4dn.aularm.aularm;
 
 import android.content.Context;
 import android.content.Intent;
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
@@ -13,17 +15,29 @@ import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+
+import java.util.HashMap;
+import java.util.Map;
+
 import static android.content.ContentValues.TAG;
 
-class FirebaseHelper {
+
+/**
+ * Attempt at making the class be parcelable, which failed...
+ */
+class FirebaseHelper implements Parcelable {
+
     private FirebaseAuth mAuth;
     private FirebaseAuth.AuthStateListener mAuthListener;
     private FirebaseDatabase mDatabase;
+    boolean firstTime;
+    String prev_alarm;
 
     FirebaseHelper() {
         this.mAuth = FirebaseAuth.getInstance();
@@ -91,30 +105,97 @@ class FirebaseHelper {
         return mAuth.getCurrentUser();
     }
 
-    void write(String uid, String msg) {
-        this.mDatabase.getReference(uid).setValue(msg);
+    void write(String uid, String keyString, String msg) {
+        String key = this.mDatabase.getReference().child(uid).getKey();
+        Map<String, Object> childUpdates = new HashMap<>();
+        System.out.println("Writing to Firebase: " + keyString + " = " + msg);
+        childUpdates.put("/users/" + uid + "/" + keyString, msg);
+
+        mDatabase.getReference().updateChildren(childUpdates);
     }
-    //mDatabase.child("users").child(userId).child("username").setValue(name);
 
-
-    DatabaseReference read(String uid) {
-        DatabaseReference ref = this.mDatabase.getReference(uid);
-
-        ref.addValueEventListener(new ValueEventListener() {
+    void readAlarm() {
+        mDatabase.getInstance().getReference().child("users").child(mAuth.getCurrentUser().getUid()).addChildEventListener(new ChildEventListener() {
 
             @Override
-            public void onDataChange(DataSnapshot dataSnapshot) {
-                String value = dataSnapshot.getValue(String.class);
-                Log.d(TAG, "Value is: " + value);
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                prev_alarm = (String) dataSnapshot.getValue();
             }
 
             @Override
-            public void onCancelled(DatabaseError e) {
-                Log.w(TAG, "Failed to read value.", e.toException());
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+                prev_alarm = (String) dataSnapshot.getValue();
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+                prev_alarm = (String) dataSnapshot.getValue();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
             }
         });
-
-        return ref;
     }
 
+    void isFirstTimeUser() {
+        DatabaseReference ref = mDatabase.getInstance().getReference().child("users").child(mAuth.getCurrentUser().getUid());
+        final boolean[] val = new boolean[1];
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                if (dataSnapshot.child("firsttime").getValue().equals("false")) {
+                    isFirstTimeUser(false);
+                } else {
+                    isFirstTimeUser(true);
+                }
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+    }
+
+    void isFirstTimeUser(Boolean val) {
+        firstTime = val;
+    }
+
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    @Override
+    public void writeToParcel(Parcel parcel, int i) {
+        parcel.writeParcelable((Parcelable) mAuth, i);
+        parcel.writeParcelable((Parcelable) mAuthListener, i);
+        parcel.writeParcelable((Parcelable) mDatabase, i);
+        parcel.writeString(prev_alarm);
+    }
+
+    private FirebaseHelper(Parcel in) {
+        mAuth = (FirebaseAuth) in.readParcelable(FirebaseAuth.class.getClassLoader());
+        mAuthListener = (FirebaseAuth.AuthStateListener) in.readParcelable(FirebaseAuth.AuthStateListener.class.getClassLoader());
+        mDatabase = (FirebaseDatabase) in.readParcelable(FirebaseDatabase.class.getClassLoader());
+        prev_alarm = in.readString();
+    }
+
+    public static final Parcelable.Creator<FirebaseHelper> CREATOR = new Creator<FirebaseHelper>() {
+        @Override
+        public FirebaseHelper createFromParcel(Parcel parcel) {
+            return new FirebaseHelper(parcel);
+        }
+
+        @Override
+        public FirebaseHelper[] newArray(int i) {
+            return new FirebaseHelper[0];
+        }
+    };
 }

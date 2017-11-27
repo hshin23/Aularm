@@ -1,9 +1,9 @@
 package com.a4dn.aularm.aularm;
-
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.icu.util.Calendar;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
@@ -20,13 +20,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.TextView;
 import android.widget.TimePicker;
 
 public class NavigationActivity extends AppCompatActivity {
 
     SectionsPagerAdapter mSectionsPagerAdapter;
     ViewPager mViewPager;
-
     FirebaseHelper firebase;
 
     @Override
@@ -36,6 +36,8 @@ public class NavigationActivity extends AppCompatActivity {
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+        Intent intent = getIntent();
+        firebase = intent.getParcelableExtra("FirebaseHelper");
 
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
@@ -46,6 +48,12 @@ public class NavigationActivity extends AppCompatActivity {
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
         firebase = new FirebaseHelper();
+        firebase.isFirstTimeUser();
+        if (firebase.firstTime) {
+            mViewPager.setCurrentItem(2);
+        } else {
+            mViewPager.setCurrentItem(1);
+        }
     }
 
     @Override
@@ -99,26 +107,55 @@ public class NavigationActivity extends AppCompatActivity {
             Button cancel = rootView.findViewById(R.id.btn_cancel);
             final PendingIntent[] intent = new PendingIntent[1];
 
+            final TextView time = rootView.findViewById(R.id.timeView);
+            String prev_time = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString("Alarm", "Not set");
+            time.setText(prev_time);
+
             set.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
+                    PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).edit().putString("Alarm", calendar.getTime().toString()).commit();
                     intent[0] = setAlarm(alarmManager, calendar, clock.getHour(), clock.getMinute());
+                    time.setText(calendar.getTime().toString());
                 }});
 
             cancel.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     cancelAlarm(alarmManager, intent[0]);
+                    time.setText("Not set");
                 }});
 
             return rootView;
         }
 
         private PendingIntent setAlarm(AlarmManager alarmManager, Calendar calendar, int hourOfDay,  int minute) {
+            // Current time
+            Calendar cur_cal = Calendar.getInstance();
+            int cur_hour = cur_cal.get(Calendar.HOUR_OF_DAY);
+            int cur_minute = cur_cal.get(Calendar.MINUTE);
+            int cur_date = cur_cal.get(Calendar.DATE);
 
             // Set alarm time
-            calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-            calendar.set(Calendar.MINUTE, minute);
+            if (cur_hour > hourOfDay) {
+                calendar.set(Calendar.DATE, cur_date + 1);
+                calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                calendar.set(Calendar.MINUTE, minute);
+            } else if (cur_hour ==  hourOfDay) {
+                if (cur_minute > minute) {
+                    calendar.set(Calendar.DATE, cur_date + 1);
+                    calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                    calendar.set(Calendar.MINUTE, minute);
+                } else {
+                    calendar.set(Calendar.DATE, cur_date);
+                    calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                    calendar.set(Calendar.MINUTE, minute);
+                }
+            } else {
+                calendar.set(Calendar.DATE, cur_date);
+                calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                calendar.set(Calendar.MINUTE, minute);
+            }
 
             // Intent to send to receiver
             Intent intent = new Intent(getActivity().getApplicationContext(), Receiver.class);
@@ -127,10 +164,11 @@ public class NavigationActivity extends AppCompatActivity {
             PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity().getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
             // send alarm to manager
-            // alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), alarmManager.INTERVAL_DAY , pendingIntent);
             alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
 
             Log.i("Time Changed", String.valueOf(hourOfDay) + ":" + String.valueOf(minute));
+            FirebaseHelper firebase = new FirebaseHelper();
+            firebase.write(firebase.getUser().getUid(), "alarm", calendar.getTime().toString());
 
             return pendingIntent;
         }
@@ -158,7 +196,6 @@ public class NavigationActivity extends AppCompatActivity {
 
     }
 
-
     public static class QuestionnaireFragment extends Fragment {
 
         public static QuestionnaireFragment newInstance() {
@@ -171,7 +208,7 @@ public class NavigationActivity extends AppCompatActivity {
                                  Bundle savedInstanceState) {
             final View rootView = inflater.inflate(R.layout.fragment_quest, container, false);
 
-            Button butt = (Button) rootView.findViewById(R.id.gen_alarm_butt);
+            Button butt = rootView.findViewById(R.id.gen_alarm_butt);
 
             final EditText anOne = rootView.findViewById(R.id.answer_1);
             final EditText anTwo = rootView.findViewById(R.id.answer_2);
@@ -215,9 +252,10 @@ public class NavigationActivity extends AppCompatActivity {
                     Log.d("wake_timeVal",wake_timeVal);
                     Log.i("currentUser",  firebase.getUser().getUid());
                     String uid = firebase.getUser().getUid();
-                    firebase.write(uid, hours);
-                    firebase.write(uid, sleep_timeVal);
-                    firebase.write(uid, wake_timeVal);
+                    firebase.write(uid, "hours", hours);
+                    firebase.write(uid, "sleep", sleep_timeVal);
+                    firebase.write(uid, "wake", wake_timeVal);
+                    firebase.write(uid,  "firsttime", "false");
                     Log.i("UID", uid);
                 }
             });
@@ -234,6 +272,7 @@ public class NavigationActivity extends AppCompatActivity {
 
         public SectionsPagerAdapter(FragmentManager fm) {
             super(fm);
+            getItem(1);
         }
 
         @Override
@@ -256,5 +295,4 @@ public class NavigationActivity extends AppCompatActivity {
             return 3;
         }
     }
-
 }

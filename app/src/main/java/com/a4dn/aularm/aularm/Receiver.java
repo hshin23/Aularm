@@ -21,8 +21,6 @@ public class Receiver extends BroadcastReceiver {
         // Lock acquisition
         wl.acquire();
 
-        Log.v("ADebugTag", "It work!");
-
         // Start alarm
         Intent play_alarm_intent = new Intent(context, PlayService.class);
         context.startService(play_alarm_intent);

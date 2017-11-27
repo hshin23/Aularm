@@ -26,6 +26,7 @@ public class PlayService extends Service {
         player.setLooping(true);
         player.start();
 
+        // No more services are created once killed
         return START_NOT_STICKY;
     }
 }

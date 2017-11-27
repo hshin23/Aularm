@@ -6,16 +6,11 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
-import android.widget.LinearLayout;
 
 import java.util.List;
 
 import pub.devrel.easypermissions.EasyPermissions;
 
-/**
- * Created by rob on 11/26/17.
- */
 
 public class GCalHelper extends Fragment implements EasyPermissions.PermissionCallbacks {
 
