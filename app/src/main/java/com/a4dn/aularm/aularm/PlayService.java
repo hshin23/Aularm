@@ -23,6 +23,7 @@ public class PlayService extends Service {
         Log.i("In the service,", "start command");
 
         player = MediaPlayer.create(this, R.raw.analog);
+        player.setLooping(true);
         player.start();
 
         return START_NOT_STICKY;

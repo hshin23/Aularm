@@ -32,6 +32,7 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.v4.app.Fragment;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
 import android.view.View;
@@ -48,7 +49,7 @@ import java.util.List;
 import pub.devrel.easypermissions.AfterPermissionGranted;
 import pub.devrel.easypermissions.EasyPermissions;
 
-public class ExampleGCal extends Activity
+public class ExampleGCal extends Fragment
         implements EasyPermissions.PermissionCallbacks {
     GoogleAccountCredential mCredential;
     private TextView mOutputText;
@@ -69,9 +70,9 @@ public class ExampleGCal extends Activity
      * @param savedInstanceState previously saved instance data.
      */
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreateView(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        LinearLayout activityLayout = new LinearLayout(this);
+        LinearLayout activityLayout = new LinearLayout(getActivity().getApplicationContext());
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.MATCH_PARENT);
@@ -83,7 +84,7 @@ public class ExampleGCal extends Activity
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
 
-        mCallApiButton = new Button(this);
+        mCallApiButton = new Button(getActivity().getApplicationContext());
         mCallApiButton.setText(BUTTON_TEXT);
         mCallApiButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -96,7 +97,7 @@ public class ExampleGCal extends Activity
         });
         activityLayout.addView(mCallApiButton);
 
-        mOutputText = new TextView(this);
+        mOutputText = new TextView(getActivity().getApplicationContext());
         mOutputText.setLayoutParams(tlp);
         mOutputText.setPadding(16, 16, 16, 16);
         mOutputText.setVerticalScrollBarEnabled(true);
@@ -105,7 +106,7 @@ public class ExampleGCal extends Activity
                 "Click the \'" + BUTTON_TEXT +"\' button to test the API.");
         activityLayout.addView(mOutputText);
 
-        mProgress = new ProgressDialog(this);
+        mProgress = new ProgressDialog(getActivity().getApplicationContext());
         mProgress.setMessage("Calling Google Calendar API ...");
 
         setContentView(activityLayout);
@@ -143,14 +144,14 @@ public class ExampleGCal extends Activity
      * picker dialog will be shown to the user. Note that the setting the
      * account to use with the credentials object requires the app to have the
      * GET_ACCOUNTS permission, which is requested here if it is not already
-     * present. The AfterPermissionGranted annotation indicates that this
+     * present. The AfterPermissionGranted annotation indicates that getActivity().getApplicationContext()
      * function will be rerun automatically whenever the GET_ACCOUNTS permission
      * is granted.
      */
     @AfterPermissionGranted(REQUEST_PERMISSION_GET_ACCOUNTS)
     private void chooseAccount() {
         if (EasyPermissions.hasPermissions(
-                this, Manifest.permission.GET_ACCOUNTS)) {
+                getActivity().getApplicationContext(), Manifest.permission.GET_ACCOUNTS)) {
             String accountName = getPreferences(Context.MODE_PRIVATE)
                     .getString(PREF_ACCOUNT_NAME, null);
             if (accountName != null) {
@@ -165,7 +166,7 @@ public class ExampleGCal extends Activity
         } else {
             // Request the GET_ACCOUNTS permission via a user dialog
             EasyPermissions.requestPermissions(
-                    this,
+                    getActivity().getApplicationContext(),
                     "This app needs to access your Google account (via Contacts).",
                     REQUEST_PERMISSION_GET_ACCOUNTS,
                     Manifest.permission.GET_ACCOUNTS);
@@ -191,7 +192,7 @@ public class ExampleGCal extends Activity
                 if (resultCode != RESULT_OK) {
                     mOutputText.setText(
                             "This app requires Google Play Services. Please install " +
-                                    "Google Play Services on your device and relaunch this app.");
+                                    "Google Play Services on your device and relaunch getActivity().getApplicationContext() app.");
                 } else {
                     getResultsFromApi();
                 }
@@ -205,7 +206,7 @@ public class ExampleGCal extends Activity
                         SharedPreferences settings =
                                 getPreferences(Context.MODE_PRIVATE);
                         SharedPreferences.Editor editor = settings.edit();
-                        editor.putString(PREF_ACCOUNT_NAME, accountName);
+                        editor.putString(PREF_ACCOUNT_NAME, accountName);Call GCAL A
                         editor.apply();
                         mCredential.setSelectedAccountName(accountName);
                         getResultsFromApi();
@@ -234,7 +235,7 @@ public class ExampleGCal extends Activity
                                            @NonNull int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         EasyPermissions.onRequestPermissionsResult(
-                requestCode, permissions, grantResults, this);
+                requestCode, permissions, grantResults, getActivity().getApplicationContext());
     }
 
     /**
@@ -275,13 +276,13 @@ public class ExampleGCal extends Activity
     /**
      * Check that Google Play services APK is installed and up to date.
      * @return true if Google Play Services is available and up to
-     *     date on this device; false otherwise.
+     *     date on getActivity().getApplicationContext() device; false otherwise.
      */
     private boolean isGooglePlayServicesAvailable() {
         GoogleApiAvailability apiAvailability =
                 GoogleApiAvailability.getInstance();
         final int connectionStatusCode =
-                apiAvailability.isGooglePlayServicesAvailable(this);
+                apiAvailability.isGooglePlayServicesAvailable(getActivity().getApplicationContext());
         return connectionStatusCode == ConnectionResult.SUCCESS;
     }
 
@@ -293,7 +294,7 @@ public class ExampleGCal extends Activity
         GoogleApiAvailability apiAvailability =
                 GoogleApiAvailability.getInstance();
         final int connectionStatusCode =
-                apiAvailability.isGooglePlayServicesAvailable(this);
+                apiAvailability.isGooglePlayServicesAvailable(getActivity().getApplicationContext());
         if (apiAvailability.isUserResolvableError(connectionStatusCode)) {
             showGooglePlayServicesAvailabilityErrorDialog(connectionStatusCode);
         }
@@ -304,13 +305,13 @@ public class ExampleGCal extends Activity
      * Display an error dialog showing that Google Play Services is missing
      * or out of date.
      * @param connectionStatusCode code describing the presence (or lack of)
-     *     Google Play Services on this device.
+     *     Google Play Services on getActivity().getApplicationContext() device.
      */
     void showGooglePlayServicesAvailabilityErrorDialog(
             final int connectionStatusCode) {
         GoogleApiAvailability apiAvailability = GoogleApiAvailability.getInstance();
         Dialog dialog = apiAvailability.getErrorDialog(
-                ExampleGCal.this,
+                ExampleGCal.getActivity().getApplicationContext(),
                 connectionStatusCode,
                 REQUEST_GOOGLE_PLAY_SERVICES);
         dialog.show();
@@ -335,7 +336,7 @@ public class ExampleGCal extends Activity
 
         /**
          * Background task to call Google Calendar API.
-         * @param params no parameters needed for this task.
+         * @param params no parameters needed for getActivity().getApplicationContext() task.
          */
         @Override
         protected List<String> doInBackground(Void... params) {
@@ -351,7 +352,7 @@ public class ExampleGCal extends Activity
         /**
          * Fetch a list of the next 10 events from the primary calendar.
          * @return List of Strings describing returned events.
-         * @throws IOException
+         * @throws IOExceptionCall GCAL A
          */
         private List<String> getDataFromApi() throws IOException {
             // List the next 10 events from the primary calendar.

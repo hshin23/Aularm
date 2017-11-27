@@ -2,12 +2,8 @@ package com.a4dn.aularm.aularm;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.icu.util.Calendar;
-import android.icu.util.GregorianCalendar;
-import android.os.Build;
-import android.support.annotation.RequiresApi;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
@@ -25,23 +21,13 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TimePicker;
-import android.widget.Toast;
-
-import com.firebase.ui.auth.AuthUI;
-
-import java.util.Arrays;
-import java.util.List;
-
 
 public class NavigationActivity extends AppCompatActivity {
 
-    private SectionsPagerAdapter mSectionsPagerAdapter;
-    private ViewPager mViewPager;
+    SectionsPagerAdapter mSectionsPagerAdapter;
+    ViewPager mViewPager;
 
-    private FirebaseHelper firebase;
-    private static List<AuthUI.IdpConfig> providers = Arrays.asList(
-            new AuthUI.IdpConfig.Builder(AuthUI.GOOGLE_PROVIDER).build());
-    private final int RC_SIGN_IN = 123;
+    FirebaseHelper firebase;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,9 +82,6 @@ public class NavigationActivity extends AppCompatActivity {
      */
     public static class ClockFragment extends Fragment {
 
-        public ClockFragment() {
-        }
-
         public static ClockFragment newInstance() {
             ClockFragment fragment = new ClockFragment();
 
@@ -107,22 +90,31 @@ public class NavigationActivity extends AppCompatActivity {
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+            final AlarmManager alarmManager = (AlarmManager) getActivity().getApplicationContext().getSystemService(ALARM_SERVICE);
+            final Calendar calendar = Calendar.getInstance();
+
             View rootView = inflater.inflate(R.layout.fragment_clock, container, false);
             final TimePicker clock = rootView.findViewById(R.id.timePicker);
+            Button set = rootView.findViewById(R.id.btn_set);
+            Button cancel = rootView.findViewById(R.id.btn_cancel);
+            final PendingIntent[] intent = new PendingIntent[1];
 
-            clock.setOnTimeChangedListener(new TimePicker.OnTimeChangedListener(){
-
+            set.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public void onTimeChanged(TimePicker view, int hourOfDay, int minute) {
-                    setAlarm(hourOfDay, minute);
+                public void onClick(View view) {
+                    intent[0] = setAlarm(alarmManager, calendar, clock.getHour(), clock.getMinute());
                 }});
+
+            cancel.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    cancelAlarm(alarmManager, intent[0]);
+                }});
+
             return rootView;
         }
 
-        private void setAlarm(int hourOfDay,  int minute) {
-
-            AlarmManager alarmManager = (AlarmManager) getActivity().getApplicationContext().getSystemService(ALARM_SERVICE);
-            Calendar calendar = Calendar.getInstance();
+        private PendingIntent setAlarm(AlarmManager alarmManager, Calendar calendar, int hourOfDay,  int minute) {
 
             // Set alarm time
             calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
@@ -135,10 +127,16 @@ public class NavigationActivity extends AppCompatActivity {
             PendingIntent pendingIntent = PendingIntent.getBroadcast(getActivity().getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
             // send alarm to manager
-            alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), alarmManager.INTERVAL_DAY , pendingIntent);
+            // alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), alarmManager.INTERVAL_DAY , pendingIntent);
+            alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
 
             Log.i("Time Changed", String.valueOf(hourOfDay) + ":" + String.valueOf(minute));
 
+            return pendingIntent;
+        }
+
+        private void cancelAlarm(AlarmManager alarmManager, PendingIntent i) {
+            alarmManager.cancel(i);
         }
     }
 
@@ -215,11 +213,12 @@ public class NavigationActivity extends AppCompatActivity {
                     Log.d("hours", hours);
                     Log.d("sleep_timeVal",sleep_timeVal);
                     Log.d("wake_timeVal",wake_timeVal);
+                    Log.i("currentUser",  firebase.getUser().getUid());
                     String uid = firebase.getUser().getUid();
                     firebase.write(uid, hours);
                     firebase.write(uid, sleep_timeVal);
                     firebase.write(uid, wake_timeVal);
-                    System.out.println("UID = " + uid);
+                    Log.i("UID", uid);
                 }
             });
 
@@ -239,8 +238,6 @@ public class NavigationActivity extends AppCompatActivity {
 
         @Override
         public Fragment getItem(int position) {
-            // getItem is called to instantiate the fragment for the given page.
-            // Return a PlaceholderFragment (defined as a static inner class below).
             switch (position) {
                 case 0:
                     return CalendarFragment.newInstance();
@@ -259,4 +256,5 @@ public class NavigationActivity extends AppCompatActivity {
             return 3;
         }
     }
+
 }
