@@ -14,7 +14,6 @@ public class PlayService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) {
-
         return null;
     }
 
@@ -22,9 +21,12 @@ public class PlayService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.i("In the service,", "start command");
 
+        // New Player that infinitely loops
         player = MediaPlayer.create(this, R.raw.analog);
         player.setLooping(true);
         player.start();
+
+        // Start an ACTIVITY to cancel or snooze alarm
 
         // No more services are created once killed
         return START_NOT_STICKY;

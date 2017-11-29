@@ -4,6 +4,8 @@ import android.app.PendingIntent;
 import android.content.Intent;
 import android.icu.util.Calendar;
 import android.preference.PreferenceManager;
+import android.support.annotation.NonNull;
+import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 
@@ -22,38 +24,65 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.TimePicker;
+import android.widget.Toast;
+
+import com.firebase.ui.auth.AuthUI;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class NavigationActivity extends AppCompatActivity {
 
     SectionsPagerAdapter mSectionsPagerAdapter;
     ViewPager mViewPager;
-    FirebaseHelper firebase;
+
+    private static FirebaseAuth mAuth;
+    private DatabaseReference mDatabase;
+    private DatabaseReference userRef;
+
+    final String TAG = "NAVIGATION_ACTIVITY";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_navigation);
 
+        mAuth =  FirebaseAuth.getInstance();
+        mDatabase = FirebaseDatabase.getInstance().getReference();
+        userRef = FirebaseDatabase.getInstance().getReference().child("users").child(mAuth.getUid());
+
+        Log.i(TAG, "Initializatioin started...");
+        setToolbar();
+        setNavigation();
+        Log.i(TAG, "Initializatioin complete...");
+    }
+
+    private void setToolbar() {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-        Intent intent = getIntent();
-        firebase = intent.getParcelableExtra("FirebaseHelper");
+        Log.i(TAG, "R.id.toolbar set as ActionBar");
+    }
 
+    private void setNavigation() {
         // Create the adapter that will return a fragment for each of the three
         // primary sections of the activity.
         mSectionsPagerAdapter = new SectionsPagerAdapter(getSupportFragmentManager());
 
         // Set up the ViewPager with the sections adapter.
-        mViewPager = (ViewPager) findViewById(R.id.container);
+        mViewPager = findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
+        Log.e(TAG, String.valueOf(getIntent().getIntExtra("page", 0)));
+        mViewPager.setCurrentItem(getIntent().getIntExtra("page", 1));
 
-        firebase = new FirebaseHelper();
-        firebase.isFirstTimeUser();
-        if (firebase.firstTime) {
-            mViewPager.setCurrentItem(2);
-        } else {
-            mViewPager.setCurrentItem(1);
-        }
+        Log.i(TAG, "SectionsPagerAdapter and ViewPager set");
     }
 
     @Override
@@ -77,7 +106,16 @@ public class NavigationActivity extends AppCompatActivity {
 
         switch (id) {
             case R.id.action_signout:
-                firebase.signOut(this);
+                if (FirebaseAuth.getInstance().getCurrentUser() != null) {
+                    AuthUI.getInstance()
+                            .signOut(this)
+                            .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+
+                                }
+                            });
+                }
                 startActivity(new Intent(this, LoginActivity.class));
                 finish();
         }
@@ -90,71 +128,84 @@ public class NavigationActivity extends AppCompatActivity {
      */
     public static class ClockFragment extends Fragment {
 
-        public static ClockFragment newInstance() {
-            ClockFragment fragment = new ClockFragment();
+        final String TAG = "CLOCK_FRAGMENT";
+        DatabaseReference mDatabase;
+        FirebaseAuth mAuth;
 
-            return fragment;
+        public ClockFragment() {
+            mDatabase = FirebaseDatabase.getInstance().getReference();
+            mAuth = FirebaseAuth.getInstance();
+        }
+
+        public static ClockFragment newInstance() {
+            return new ClockFragment();
         }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+            // Initialize objects to use alarms
+            View rootView = inflater.inflate(R.layout.fragment_clock, container, false);
+
             final AlarmManager alarmManager = (AlarmManager) getActivity().getApplicationContext().getSystemService(ALARM_SERVICE);
             final Calendar calendar = Calendar.getInstance();
-
-            View rootView = inflater.inflate(R.layout.fragment_clock, container, false);
             final TimePicker clock = rootView.findViewById(R.id.timePicker);
-            Button set = rootView.findViewById(R.id.btn_set);
-            Button cancel = rootView.findViewById(R.id.btn_cancel);
             final PendingIntent[] intent = new PendingIntent[1];
-
             final TextView time = rootView.findViewById(R.id.timeView);
-            String prev_time = PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).getString("Alarm", "Not set");
-            time.setText(prev_time);
 
-            set.setOnClickListener(new View.OnClickListener() {
+            mDatabase.child("users").child(mAuth.getUid()).addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    try {
+                        time.setText(dataSnapshot.child("alarm").getValue().toString());
+                    } catch (Exception e) {
+                        time.setText("");
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+                    Log.w(TAG, "error:", databaseError.toException());
+                }
+            });
+
+            Button btn_set = rootView.findViewById(R.id.btn_set);
+            Button btn_cancel = rootView.findViewById(R.id.btn_cancel);
+
+            btn_set.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    PreferenceManager.getDefaultSharedPreferences(getActivity().getApplicationContext()).edit().putString("Alarm", calendar.getTime().toString()).commit();
                     intent[0] = setAlarm(alarmManager, calendar, clock.getHour(), clock.getMinute());
-                    time.setText(calendar.getTime().toString());
                 }});
 
-            cancel.setOnClickListener(new View.OnClickListener() {
+            btn_cancel.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
                     cancelAlarm(alarmManager, intent[0]);
-                    time.setText("Not set");
                 }});
 
             return rootView;
         }
 
         private PendingIntent setAlarm(AlarmManager alarmManager, Calendar calendar, int hourOfDay,  int minute) {
-            // Current time
+            // Pre-process Calendar object for calculation
             Calendar cur_cal = Calendar.getInstance();
-            int cur_hour = cur_cal.get(Calendar.HOUR_OF_DAY);
-            int cur_minute = cur_cal.get(Calendar.MINUTE);
-            int cur_date = cur_cal.get(Calendar.DATE);
+            cur_cal.set(Calendar.SECOND, 0);
+            calendar.set(Calendar.DATE, cur_cal.get(Calendar.DATE));
+            calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+            calendar.set(Calendar.MINUTE, minute);
+            calendar.set(Calendar.SECOND, 0);
 
-            // Set alarm time
-            if (cur_hour > hourOfDay) {
-                calendar.set(Calendar.DATE, cur_date + 1);
-                calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                calendar.set(Calendar.MINUTE, minute);
-            } else if (cur_hour ==  hourOfDay) {
-                if (cur_minute > minute) {
-                    calendar.set(Calendar.DATE, cur_date + 1);
-                    calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                    calendar.set(Calendar.MINUTE, minute);
-                } else {
-                    calendar.set(Calendar.DATE, cur_date);
-                    calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                    calendar.set(Calendar.MINUTE, minute);
-                }
-            } else {
-                calendar.set(Calendar.DATE, cur_date);
-                calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
-                calendar.set(Calendar.MINUTE, minute);
+            // difference in times
+            // = 0 if same time
+            // > 0 if alarm time is before (set next day alarm)
+            // < 0 if alarm time is after  (set same day alarm)
+            int time_diff = cur_cal.compareTo(calendar);
+            if (time_diff == 0) {
+                Toast.makeText(getActivity().getApplicationContext(), "Wrong time set", Toast.LENGTH_SHORT);
+            }
+
+            if (time_diff > 0) {
+                calendar.set(Calendar.DATE, calendar.get(Calendar.DATE) + 1);
             }
 
             // Intent to send to receiver
@@ -166,15 +217,32 @@ public class NavigationActivity extends AppCompatActivity {
             // send alarm to manager
             alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
 
-            Log.i("Time Changed", String.valueOf(hourOfDay) + ":" + String.valueOf(minute));
-            FirebaseHelper firebase = new FirebaseHelper();
-            firebase.write(firebase.getUser().getUid(), "alarm", calendar.getTime().toString());
+            // Update current alarm time to firebase
+            write(mAuth.getUid(), "alarm", calendar.getTime().toString());
 
             return pendingIntent;
         }
 
-        private void cancelAlarm(AlarmManager alarmManager, PendingIntent i) {
-            alarmManager.cancel(i);
+        private void cancelAlarm(AlarmManager alarmManager, PendingIntent pendingIntent) {
+            if (pendingIntent == null) {
+                // Intent to send to receiver
+                Intent intent = new Intent(getActivity().getApplicationContext(), Receiver.class);
+                // Delay intent until given time
+                pendingIntent = PendingIntent.getBroadcast(getActivity().getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+                alarmManager.set(AlarmManager.RTC_WAKEUP, 0, pendingIntent);
+            }
+            // send alarm to manager
+            alarmManager.cancel(pendingIntent);
+            write(mAuth.getUid(), "alarm", " ");
+        }
+
+        void write(String uid, String keyString, String msg) {
+            String key = mDatabase.child(uid).getKey();
+            Map<String, Object> childUpdates = new HashMap<>();
+            System.out.println("Writing to Firebase: " + keyString + " = " + msg);
+            childUpdates.put("/users/" + uid + "/" + keyString, msg);
+
+            mDatabase.updateChildren(childUpdates);
         }
     }
 
@@ -184,23 +252,25 @@ public class NavigationActivity extends AppCompatActivity {
     public static class CalendarFragment extends Fragment {
 
         public static CalendarFragment newInstance() {
-            CalendarFragment fragment = new CalendarFragment();
-            return fragment;
+            return new CalendarFragment();
         }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            View rootView = inflater.inflate(R.layout.fragment_calendar, container, false);
-            return rootView;
+            return inflater.inflate(R.layout.fragment_calendar, container, false);
         }
 
     }
 
     public static class QuestionnaireFragment extends Fragment {
+        DatabaseReference mDatabase;
+
+        public QuestionnaireFragment() {
+            mDatabase = FirebaseDatabase.getInstance().getReference();
+        }
 
         public static QuestionnaireFragment newInstance() {
-            QuestionnaireFragment fragment = new QuestionnaireFragment();
-            return fragment;
+            return new QuestionnaireFragment();
         }
 
         @Override
@@ -223,7 +293,6 @@ public class NavigationActivity extends AppCompatActivity {
                     String hours = "";
                     String sleep_timeVal = "";
                     String wake_timeVal = "";
-                    FirebaseHelper firebase = new FirebaseHelper();
 
                     if (!checkOne.equals("")) {
                         if ((Integer.parseInt(checkOne) < 24) && (Integer.parseInt(checkOne) >= 0)) {
@@ -250,17 +319,26 @@ public class NavigationActivity extends AppCompatActivity {
                     Log.d("hours", hours);
                     Log.d("sleep_timeVal",sleep_timeVal);
                     Log.d("wake_timeVal",wake_timeVal);
-                    Log.i("currentUser",  firebase.getUser().getUid());
-                    String uid = firebase.getUser().getUid();
-                    firebase.write(uid, "hours", hours);
-                    firebase.write(uid, "sleep", sleep_timeVal);
-                    firebase.write(uid, "wake", wake_timeVal);
-                    firebase.write(uid,  "firsttime", "false");
+                    Log.i("currentUser",  mAuth.getCurrentUser().getUid());
+                    String uid = mAuth.getCurrentUser().getUid();
+                    write(uid, "hours", hours);
+                    write(uid, "sleep", sleep_timeVal);
+                    write(uid, "wake", wake_timeVal);
+                    write(uid,  "firsttime", "false");
                     Log.i("UID", uid);
                 }
             });
 
             return rootView;
+        }
+
+        void write(String uid, String keyString, String msg) {
+            String key = mDatabase.child(uid).getKey();
+            Map<String, Object> childUpdates = new HashMap<>();
+            System.out.println("Writing to Firebase: " + keyString + " = " + msg);
+            childUpdates.put("/users/" + uid + "/" + keyString, msg);
+
+            mDatabase.updateChildren(childUpdates);
         }
     }
 
@@ -270,7 +348,7 @@ public class NavigationActivity extends AppCompatActivity {
      */
     public class SectionsPagerAdapter extends FragmentPagerAdapter {
 
-        public SectionsPagerAdapter(FragmentManager fm) {
+        SectionsPagerAdapter(FragmentManager fm) {
             super(fm);
             getItem(1);
         }
@@ -295,4 +373,5 @@ public class NavigationActivity extends AppCompatActivity {
             return 3;
         }
     }
+
 }
