@@ -1,12 +1,13 @@
 package com.a4dn.aularm.aularm;
 import android.app.AlarmManager;
+import android.app.ListFragment;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.icu.util.Calendar;
-import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
-import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
 
 import android.support.v4.app.Fragment;
@@ -17,11 +18,15 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
@@ -36,8 +41,15 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+
+import pub.devrel.easypermissions.EasyPermissions;
 
 public class NavigationActivity extends AppCompatActivity {
 
@@ -118,10 +130,19 @@ public class NavigationActivity extends AppCompatActivity {
                 }
                 startActivity(new Intent(this, LoginActivity.class));
                 finish();
+            case R.id.action_add:
+                item.setEnabled(false);
+                Map<String, Object> childUpdates = new HashMap<>();
+                Calendar cur_cal = Calendar.getInstance();
+                cur_cal.set(Calendar.HOUR_OF_DAY, cur_cal.get(Calendar.MINUTE) + 5);
+                childUpdates.put("/users/" + FirebaseAuth.getInstance().getUid() + "/todo/" + cur_cal.getTime().toString(), "dummy");
+                mDatabase.updateChildren(childUpdates);
+                item.setEnabled(true);
         }
 
         return super.onOptionsItemSelected(item);
     }
+
 
     /**
      * A placeholder fragment containing a simple view.
@@ -152,13 +173,23 @@ public class NavigationActivity extends AppCompatActivity {
             final PendingIntent[] intent = new PendingIntent[1];
             final TextView time = rootView.findViewById(R.id.timeView);
 
-            mDatabase.child("users").child(mAuth.getUid()).addValueEventListener(new ValueEventListener() {
+            mDatabase.child("users").child(mAuth.getUid()).child("general").addValueEventListener(new ValueEventListener() {
                 @Override
                 public void onDataChange(DataSnapshot dataSnapshot) {
-                    try {
-                        time.setText(dataSnapshot.child("alarm").getValue().toString());
-                    } catch (Exception e) {
-                        time.setText("");
+                    if (dataSnapshot.child("alarm").getValue() == null) {
+                        writeGeneral(FirebaseAuth.getInstance().getUid(), "alarm", "");
+                        if (dataSnapshot.child("suggested_time") != null) {
+                            time.setText(dataSnapshot.child("suggested_time").getValue().toString());
+                        } else {
+                            time.setText("");
+                        }
+                    } else {
+                        if (dataSnapshot.child("alarm").getValue().toString().equals("")) {
+                            time.setText(dataSnapshot.child("suggested_time").getValue().toString());
+                        } else {
+                            time.setText(dataSnapshot.child("alarm").getValue().toString());
+                        }
+
                     }
                 }
 
@@ -218,7 +249,7 @@ public class NavigationActivity extends AppCompatActivity {
             alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
 
             // Update current alarm time to firebase
-            write(mAuth.getUid(), "alarm", calendar.getTime().toString());
+            writeGeneral(mAuth.getUid(), "alarm", calendar.getTime().toString());
 
             return pendingIntent;
         }
@@ -233,14 +264,14 @@ public class NavigationActivity extends AppCompatActivity {
             }
             // send alarm to manager
             alarmManager.cancel(pendingIntent);
-            write(mAuth.getUid(), "alarm", " ");
+            writeGeneral(mAuth.getUid(), "alarm", "");
         }
 
-        void write(String uid, String keyString, String msg) {
+        void writeGeneral(String uid, String keyString, String msg) {
             String key = mDatabase.child(uid).getKey();
             Map<String, Object> childUpdates = new HashMap<>();
             System.out.println("Writing to Firebase: " + keyString + " = " + msg);
-            childUpdates.put("/users/" + uid + "/" + keyString, msg);
+            childUpdates.put("/users/" + uid + "/general/" + keyString, msg);
 
             mDatabase.updateChildren(childUpdates);
         }
@@ -251,17 +282,82 @@ public class NavigationActivity extends AppCompatActivity {
      */
     public static class CalendarFragment extends Fragment {
 
+        private final String TAG = "CALENDAR_FRAGMENT";
+
         public static CalendarFragment newInstance() {
             return new CalendarFragment();
         }
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-            return inflater.inflate(R.layout.fragment_calendar, container, false);
+            View rootView = inflater.inflate(R.layout.fragment_calendar, container, false);
+            setHasOptionsMenu(true);
+
+
+            ListView listView = rootView.findViewById(R.id.list_view);
+            final ArrayAdapter<String> myAdapter = new ArrayAdapter<>(getActivity().getApplicationContext(), R.layout.todo);
+            listView.setAdapter(myAdapter);
+
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("users").child(FirebaseAuth.getInstance().getUid()).child("todo");
+            ref.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    if (dataSnapshot.getChildrenCount() != 0) {
+                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                            Calendar temp = Calendar.getInstance();
+                            SimpleDateFormat sdf = new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.ENGLISH);
+                            try {
+                                temp.setTime(sdf.parse(snapshot.getKey().toString()));
+                            } catch (ParseException e) {
+                                e.printStackTrace();
+                            }
+                            String description = snapshot.getValue().toString();
+
+                            MyDate d = new MyDate(temp, description);
+                            if (myAdapter.getPosition(d.toString()) < 0) {
+                                myAdapter.add(d.toString());
+                            }
+                            Log.e(TAG, snapshot.getValue().toString());
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
+
+
+            return rootView;
         }
 
+        @Override
+        public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+            // Inflate the menu; this adds items to the action bar if it is present.
+            inflater.inflate(R.menu.menu_calendar, menu);
+            super.onCreateOptionsMenu(menu, inflater);
+        }
+
+        private class MyDate {
+            Calendar time;
+            String description;
+
+            public MyDate(Calendar time, String description) {
+                this.time = time;
+                this.description = description;
+            }
+
+            public String toString() {
+                return time.getTime().toString() + "\t" + description;
+            }
+        }
     }
 
+
+    /**
+     * Fragment Class for Questions, a.k.a *settings*
+     */
     public static class QuestionnaireFragment extends Fragment {
         DatabaseReference mDatabase;
 
@@ -274,15 +370,38 @@ public class NavigationActivity extends AppCompatActivity {
         }
 
         @Override
-        public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                                 Bundle savedInstanceState) {
+        public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+
             final View rootView = inflater.inflate(R.layout.fragment_quest, container, false);
+
 
             Button butt = rootView.findViewById(R.id.gen_alarm_butt);
 
             final EditText anOne = rootView.findViewById(R.id.answer_1);
             final EditText anTwo = rootView.findViewById(R.id.answer_2);
             final EditText anThree = rootView.findViewById(R.id.answer_3);
+
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference().child("users").child(FirebaseAuth.getInstance().getUid()).child("general");
+            ref.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(DataSnapshot dataSnapshot) {
+                    if (dataSnapshot.child("suggested_time").getValue() != null) {
+                        if (dataSnapshot.child("avg_sleep_time").getValue() != null && dataSnapshot.child("avg_wake_up_time").getValue() != null && dataSnapshot.child("avg_time_to_sleep").getValue() != null) {
+                            String avg_sleep_time = dataSnapshot.child("avg_sleep_time").getValue().toString();
+                            String avg_wake_up_time = dataSnapshot.child("avg_wake_up_time").getValue().toString();
+                            String avg_time_to_sleep = dataSnapshot.child("avg_time_to_sleep").getValue().toString();
+                            ((EditText) getActivity().findViewById(R.id.answer_1)).setText(avg_sleep_time);
+                            ((EditText) getActivity().findViewById(R.id.answer_2)).setText(avg_wake_up_time);
+                            ((EditText) getActivity().findViewById(R.id.answer_3)).setText(avg_time_to_sleep);
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(DatabaseError databaseError) {
+
+                }
+            });
 
             butt.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -316,15 +435,15 @@ public class NavigationActivity extends AppCompatActivity {
                         }
                     }
 
-                    Log.d("hours", hours);
-                    Log.d("sleep_timeVal",sleep_timeVal);
-                    Log.d("wake_timeVal",wake_timeVal);
-                    Log.i("currentUser",  mAuth.getCurrentUser().getUid());
-                    String uid = mAuth.getCurrentUser().getUid();
-                    write(uid, "hours", hours);
-                    write(uid, "sleep", sleep_timeVal);
-                    write(uid, "wake", wake_timeVal);
-                    write(uid,  "firsttime", "false");
+                    String uid = mAuth.getUid();
+                    Calendar suggested_cal = Calendar.getInstance();
+                    suggested_cal.set(Calendar.HOUR_OF_DAY, Integer.parseInt(wake_timeVal));
+                    suggested_cal.set(Calendar.MINUTE, 0);
+                    writeGeneral(uid, "suggested_time", suggested_cal.getTime().toString());
+                    writeGeneral(uid, "avg_sleep_time", hours);
+                    writeGeneral(uid, "avg_wake_up_time", sleep_timeVal);
+                    writeGeneral(uid, "avg_time_to_sleep", wake_timeVal);
+                    writeGeneral(uid,  "firsttime", "false");
                     Log.i("UID", uid);
                 }
             });
@@ -332,14 +451,15 @@ public class NavigationActivity extends AppCompatActivity {
             return rootView;
         }
 
-        void write(String uid, String keyString, String msg) {
+        void writeGeneral(String uid, String keyString, String msg) {
             String key = mDatabase.child(uid).getKey();
             Map<String, Object> childUpdates = new HashMap<>();
             System.out.println("Writing to Firebase: " + keyString + " = " + msg);
-            childUpdates.put("/users/" + uid + "/" + keyString, msg);
+            childUpdates.put("/users/" + uid + "/general/" + keyString, msg);
 
             mDatabase.updateChildren(childUpdates);
         }
+
     }
 
     /**

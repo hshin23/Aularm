@@ -5,10 +5,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.PowerManager;
 
-/**
- * Created by rob on 11/26/17.
- */
-
 public class Receiver extends BroadcastReceiver {
 
     final String TAG = "RECEIVER";
@@ -27,7 +23,6 @@ public class Receiver extends BroadcastReceiver {
         // Start alarm
         Intent play_alarm_intent = new Intent(context, PlayService.class);
         context.startService(play_alarm_intent);
-
 
         /* OTHER CODE GOES HERE */
 
