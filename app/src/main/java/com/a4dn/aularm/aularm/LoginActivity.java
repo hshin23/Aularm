@@ -79,10 +79,10 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    protected void showMainMenu() {
+    protected void showMainMenu(int pageIndex) {
         Intent intent = new Intent(this, NavigationActivity.class);
         intent.putExtra("uid", mAuth.getCurrentUser().getUid());
-        intent.putExtra("page", page);
+        intent.putExtra("page", pageIndex);
         startActivity(intent);
         finish();
     }
@@ -106,35 +106,27 @@ public class LoginActivity extends AppCompatActivity {
         }
     }
 
-    void setHistory(String val) {
-        if (val == null) {
-            return ;
-        } else {
-            if (val.equals("false")) {
-                this.page = 1;
-            } else {
-                this.page = 2;
-            }
-            showMainMenu();
-        }
-    }
-
     private void checkIfFirstAndSetOption() {
         DatabaseReference userRef = FirebaseDatabase.getInstance().getReference().child("users").child(FirebaseAuth.getInstance().getUid());
         userRef.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(DataSnapshot dataSnapshot) {
-                if (dataSnapshot.getKey().equals(FirebaseAuth.getInstance().getUid())) {
-                    if (dataSnapshot.child("general").child("firsttime").getValue() != null) {
-                        String firstTime = dataSnapshot.child("general").child("firsttime").getValue().toString();
-                        setHistory(firstTime);
-                    } else {
-                        writeGeneral(FirebaseAuth.getInstance().getUid(), "firsttime", "true");
-                        setHistory("true");
-                    }
-                } else {
+                Log.i(TAG, "Current User: " + FirebaseAuth.getInstance().getUid());
+
+                // Checks whether a user is in database or not
+                if (dataSnapshot.getChildrenCount() == 0) {
+                    Log.i(TAG, "First time user " + FirebaseAuth.getInstance().getUid());
+                    String uid = FirebaseAuth.getInstance().getUid();
                     writeGeneral(FirebaseAuth.getInstance().getUid(), "firsttime", "true");
-                    setHistory("true");
+                    writeGeneral(uid, "alarm", "");
+                    writeGeneral(uid, "avg_sleep_time", "");
+                    writeGeneral(uid, "avg_time_to_sleep", "");
+                    writeGeneral(uid, "avg_wake_up_time", "");
+                    writeGeneral(uid, "suggested_time", "");
+                    showMainMenu(2);
+                } else {
+                    Log.i(TAG, "Non-first time user " + FirebaseAuth.getInstance().getUid());
+                    showMainMenu(1);
                 }
             }
 
